@@ -9,8 +9,9 @@ main() {
   install_from_brewfile
   make_fish_default_shell
   set_macos_defaults
-  set_dock_applications
-  configure_mackup
+  configure_dock
+
+  install_rustup
 }
 
 function remap_caps_lock_to_escape() {
@@ -20,7 +21,7 @@ function remap_caps_lock_to_escape() {
   ARGS=""
   function Map # FROM TO
   {
-      CMD="${CMD:+${CMD},}{${FROM}: ${1}, ${TO}: ${2}}"
+    CMD="${CMD:+${CMD},}{${FROM}: ${1}, ${TO}: ${2}}"
   }
   
   # Referencing :
@@ -37,13 +38,15 @@ function remap_caps_lock_to_escape() {
   #Map ${SECTION} ${ESCAPE}
   #Map ${R_COMMAND} ${SHIFT_LOCK}
   #Map ${BACKQUOTE} ${L_CONTROL}
-  
+
   hidutil property --set "{\"UserKeyMapping\":[${CMD}]}"
+
+  success "CapsLock remapped to Escape!"
 }
 
 function install_homebrew() {
   if hash brew 2>/dev/null; then
-    success "Homebrew already installed"
+    info "Homebrew already installed"
   else
     url=https://raw.githubusercontent.com/Homebrew/install/master/install
     if /usr/bin/ruby -e "$(curl -fsSL ${url})"; then
@@ -60,6 +63,7 @@ function install_from_brewfile() {
   brew services > /dev/null 2>&1
   success "Brew services installed!"
 
+  # Install packages specified in Brewfile
   brew bundle
   success "Brewfile packages installed!"
 }
@@ -77,18 +81,20 @@ function make_fish_default_shell() {
     success "Default shell changed to fish!"
   fi
 
-  curl -L https://get.oh-my.fish > install
-  fish install --path=~/.local/share/omf --config=~/.config/omf
-
+  # Do not install OMF yet
+  # omf_directory=~/.local/share/omf
+  # if [ ! -d "$omf_directory" ]; then
+  #   curl -l https://get.oh-my.fish > install-omf
+  #   fish install --path=$omf_directory --config=~/.config/omf
+  #   rm install-omf
+  # fi
 }
-
 
 function set_macos_defaults() {
   set_global_defaults
   set_menubar_defaults
-  set_dock_defaults
   set_finder_defaults
-  set_safari_defaults
+  # set_safari_defaults
   success "MacOS defaults set!"
 }
 
@@ -100,13 +106,17 @@ function set_global_defaults() {
   defaults write -g AppleInterfaceStyle Dark
 
   # Disable system sounds
-  defaults write -g com.apple.sound.uiaudio.enabled -bool false
+  # defaults write -g com.apple.sound.uiaudio.enabled -bool false
+  defaults write com.apple.systemsound "com.apple.sound.uiaudio.enabled" -int 1
   
   # Don't show Siri in the menu bar
   defaults write com.apple.Siri StatusMenuVisible -bool false
 
   # Disable auto-correct
   defaults write -g NSAutomaticSpellingCorrectionEnabled -bool false
+
+  # Disable Dashboard
+  defaults write com.apple.dashboard mcx-disabled -bool true
 }
 
 set_menubar_defaults() {
@@ -144,23 +154,6 @@ function enable_night_shift() {
   defaults write $CORE_BRIGHTNESS "CBUser-$(dscl . -read $HOME GeneratedUID | sed 's/GeneratedUID: //')" "$ENABLE"
 }
 
-function set_dock_defaults() {
-  # Don’t show recent applications in Dock
-  defaults write com.apple.dock show-recents -bool false
-
-  # Set the icon size of Dock items to 36 pixels
-  defaults write com.apple.dock tilesize -int 36
-
-  # Disable Dashboard
-  defaults write com.apple.dashboard mcx-disabled -bool true
-
-  # Don’t show Dashboard as a Space
-  defaults write com.apple.dock dashboard-in-overlay -bool true
-
-  # Restart Dock to make changes effective now
-  killall -9 Dock
-}
-
 function set_finder_defaults() {
   # Avoid creating .DS_Store files on network or USB volumes
   defaults write com.apple.desktopservices DSDontWriteNetworkStores -bool true
@@ -171,7 +164,7 @@ function set_finder_defaults() {
 }
 
 function set_safari_defaults() {
-  container="~/Library/Containers/com.apple.Safari/Data/Library/Preferences/com.apple.Safari"
+  container="$HOME/Library/Containers/com.apple.Safari/Data/Library/Preferences/com.apple.Safari"
 
   # Create container file first
   mkdir -p `dirname $container`
@@ -194,7 +187,7 @@ function set_safari_defaults() {
   # killall -9 Safari
 }
 
-set_dock_applications() {
+configure_dock() {
   if ! hash dockutil 2>/dev/null; then
     error "Dockutil is not installed, but should have been already present!"
     exit 1
@@ -206,12 +199,39 @@ set_dock_applications() {
   dockutil --no-restart --add "/Applications/Notes.app"
   dockutil --no-restart --add "/Applications/Alacritty.app"
 
+  # Don’t show recent applications in Dock
+  defaults write com.apple.dock show-recents -bool false
+
+  # Set the icon size of Dock items to 36 pixels
+  defaults write com.apple.dock tilesize -int 36
+
+  # Don’t show Dashboard as a Space
+  defaults write com.apple.dock dashboard-in-overlay -bool true
+
   # Restart Dock to make changes effective now
   killall -9 Dock
 }
 
-function configure_mackup() {
-  cp mackup.cfg ~/.mackup.cfg
+function install_rustup() {
+  rustup_directory=~/.rustup
+  if [ -d "$rustup_directory" ]; then
+    info "rustup already installed"
+    return
+  fi
+
+  if ! hash rustup-init 2>/dev/null; then
+    error "rustup-init command not present!"
+    exit 1
+  fi
+
+  info "Running the rustup installer"
+  # Run the rustup installer
+  rustup-init
+
+  # Add cargo's bin to $PATH using fish's universal variable
+  fish -c 'set -U fish_user_paths $HOME/.cargo/bin $fish_user_paths'
+
+  success "Rustup installed!"
 }
 
 function colored_echo() {
