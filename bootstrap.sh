@@ -98,7 +98,7 @@ function set_macos_defaults() {
   set_software_update_defaults
   set_menubar_defaults
   set_finder_defaults
-  # set_safari_defaults
+  set_safari_defaults
   enable_firewall
   success "MacOS defaults set!"
 }
@@ -192,33 +192,27 @@ function set_finder_defaults() {
 }
 
 function set_safari_defaults() {
-  container="$HOME/Library/Containers/com.apple.Safari/Data/Library/Preferences/com.apple.Safari"
+  info "Make sure the terminal has 'Full Disk Access' enabled, otherwise Safari
+  settings won't work"
+  info "Press ENTER to confirm."
+  read
 
-  # Create container file first
-  mkdir -p `dirname $container`
-  touch $container
+  # Safari opens with all windows from last session
+  defaults write -app Safari AlwaysRestoreSessionAtLaunch -bool true
 
-  defaults write $container AlwaysRestoreSessionAtLaunch -bool true
+  # Enable Safari debug menu
+  defaults write -app Safari SendDoNotTrackHTTPHeader -bool true
 
-  # Enable Safari’s debug menu
-  defaults write $container SendDoNotTrackHTTPHeader -bool true
-
-  # Use DuckDuckGo as default search engine
-  defaults write $container NSPreferredWebServices '{
-  NSWebServicesProviderWebSearch = {
-    NSDefaultDisplayName = DuckDuckGo;
-    NSProviderIdentifier = "com.duckduckgo";
-  };
-}'
+  # Disable AutoFill
+  defaults write -app Safari AutoFillPasswords -bool false
 
   # Restart Safari to make changes effective now
-  # killall -9 Safari
+  osascript -e 'tell application "Safari" to quit'
 }
 
 function update_hosts_file() {
   # Update hosts file to block known malware, adware etc.
-  # TODO: this keeps expanding hosts file on each run
-  curl https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts | sudo tee -a /etc/hosts
+  curl https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts | sudo tee /etc/hosts
   sudo dscacheutil -flushcache
   sudo killall -HUP mDNSResponder
   success "Hosts file updated with "
