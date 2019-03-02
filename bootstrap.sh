@@ -18,31 +18,12 @@ main() {
 }
 
 function remap_caps_lock_to_escape() {
-  FROM='"HIDKeyboardModifierMappingSrc"'
-  TO='"HIDKeyboardModifierMappingDst"'
+  # /Library/LaunchAgents/com.user.remap_keys.plist
+  sudo cp remap_keys.sh /usr/local/bin
+  sudo chmod 0755 /usr/local/bin/remap_keys.sh
+  sudo chown root:wheel /usr/local/bin/remap_keys.sh
 
-  ARGS=""
-  function Map # FROM TO
-  {
-    CMD="${CMD:+${CMD},}{${FROM}: ${1}, ${TO}: ${2}}"
-  }
-
-  # Referencing :
-  # https://opensource.apple.com/source/IOHIDFamily/IOHIDFamily-1035.41.2/IOHIDFamily/IOHIDUsageTables.h.auto.html
-  SECTION="0x700000064"
-  ESCAPE="0x700000029"
-  BACKQUOTE="0x700000035"
-  CAPS_LOCK="0x700000039"
-  L_SHIFT="0x7000000E1"
-  R_COMMAND="0x7000000E7"
-  L_CONTROL="0x7000000E0"
-
-  Map ${CAPS_LOCK} ${ESCAPE}
-  #Map ${SECTION} ${ESCAPE}
-  #Map ${R_COMMAND} ${SHIFT_LOCK}
-  #Map ${BACKQUOTE} ${L_CONTROL}
-
-  hidutil property --set "{\"UserKeyMapping\":[${CMD}]}"
+  cp com.user.remap_keys.plist $HOME/Library/LaunchAgents/
 
   success "CapsLock remapped to Escape!"
 }

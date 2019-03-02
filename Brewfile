@@ -21,6 +21,9 @@ cask 'transmission'
 cask 'virtualbox'
 cask 'timing'
 
+tap 'homebrew/cask-versions'
+cask 'safari-technology-preview'
+
 tap 'homebrew/cask-fonts'
 cask 'font-hack-nerd-font-mono'
 cask 'font-inconsolata-nerd-font-mono'
