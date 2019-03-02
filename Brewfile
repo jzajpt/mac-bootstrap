@@ -5,6 +5,7 @@ brew 'tmux'
 brew 'neovim'
 brew 'dockutil'
 brew 'mas'
+brew 'python3'
 brew 'npm'
 brew 'rustup-init'
 

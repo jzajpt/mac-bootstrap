@@ -10,8 +10,9 @@ main() {
   make_fish_default_shell
   set_macos_defaults
   configure_dock
-
   install_rustup
+  install_dotfiles
+  setup_neovim
 }
 
 function remap_caps_lock_to_escape() {
@@ -232,6 +233,46 @@ function install_rustup() {
   fish -c 'set -U fish_user_paths $HOME/.cargo/bin $fish_user_paths'
 
   success "Rustup installed!"
+}
+
+function install_dotfiles {
+  symlink_dotfile tmux.conf
+  symlink_dotfile gitconfig
+  symlink_dotfile init.vim $HOME/.config/nvim/init.vim
+  symlink_dotfile alacritty.yml $HOME/.config/alacritty/alacritty.yml
+}
+
+function setup_neovim {
+  autoload_file=$HOME/.local/share/nvim/site/autoload/plug.vim
+
+  if [ ! -f $autoload_file ]; then
+    # Install vim-plug for neovim
+    curl -fLo $autoload_file --create-dirs \
+      https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
+    success "vim-plug for neovim installed"
+
+    nvim --headless +PlugInstall +qa
+    success "Neovim plugins installed"
+
+  else
+    info "vim-plug for neovim is already installed"
+  fi
+
+  success "Neovim setup complete!"
+}
+
+function symlink_dotfile {
+  local fname="$1"
+  local destination="$2"
+  local dotfiles_dir=$(pwd)/dotfiles
+  local default_destination=$HOME/.$fname
+  local source=$dotfiles_dir/$fname
+  if [ -z "$destination" ]; then
+    ln -fs $source $default_destination
+  else
+    mkdir -p $(dirname $destination)
+    ln -fs $source $destination
+  fi
 }
 
 function colored_echo() {
