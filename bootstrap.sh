@@ -18,13 +18,13 @@ main() {
 function remap_caps_lock_to_escape() {
   FROM='"HIDKeyboardModifierMappingSrc"'
   TO='"HIDKeyboardModifierMappingDst"'
-  
+
   ARGS=""
   function Map # FROM TO
   {
     CMD="${CMD:+${CMD},}{${FROM}: ${1}, ${TO}: ${2}}"
   }
-  
+
   # Referencing :
   # https://opensource.apple.com/source/IOHIDFamily/IOHIDFamily-1035.41.2/IOHIDFamily/IOHIDUsageTables.h.auto.html
   SECTION="0x700000064"
@@ -34,7 +34,7 @@ function remap_caps_lock_to_escape() {
   L_SHIFT="0x7000000E1"
   R_COMMAND="0x7000000E7"
   L_CONTROL="0x7000000E0"
-  
+
   Map ${CAPS_LOCK} ${ESCAPE}
   #Map ${SECTION} ${ESCAPE}
   #Map ${R_COMMAND} ${SHIFT_LOCK}
@@ -74,7 +74,7 @@ function make_fish_default_shell() {
   config="/etc/shells"
   user=$USER
   current_shell=$(finger $user | grep 'Shell: *' | cut -f3 -d ":" | xargs)
-  if [ ! $(grep $fish_shell $config) ]; then 
+  if [ ! $(grep $fish_shell $config) ]; then
     echo "$fish_shell" | sudo tee -a $config
   fi
   if [ "$current_shell" != "$fish_shell" ]; then
@@ -93,13 +93,19 @@ function make_fish_default_shell() {
 
 function set_macos_defaults() {
   set_global_defaults
+  set_software_update_defaults
   set_menubar_defaults
   set_finder_defaults
   # set_safari_defaults
+  enable_firewall
   success "MacOS defaults set!"
 }
 
 function set_global_defaults() {
+  # Close any open System Preferences panes, to prevent them from overriding
+  # settings we
+  osascript -e 'tell application "System Preferences" to quit'
+
   # Disable Guest user
   sudo defaults write /Library/Preferences/com.apple.loginwindow GuestEnabled -bool FALSE
 
@@ -109,18 +115,34 @@ function set_global_defaults() {
   # Disable system sounds
   # defaults write -g com.apple.sound.uiaudio.enabled -bool false
   defaults write com.apple.systemsound "com.apple.sound.uiaudio.enabled" -int 1
-  
+
   # Don't show Siri in the menu bar
   defaults write com.apple.Siri StatusMenuVisible -bool false
 
   # Disable auto-correct
   defaults write -g NSAutomaticSpellingCorrectionEnabled -bool false
+  defaults write -g WebAutomaticSpellingCorrectionEnabled -bool false
 
   # Disable Dashboard
   defaults write com.apple.dashboard mcx-disabled -bool true
+
+  # Require password immediately after sleep or screen saver begins"
+  defaults write com.apple.screensaver askForPassword -int 1
+  defaults write com.apple.screensaver askForPasswordDelay -int 0
 }
 
-set_menubar_defaults() {
+function set_software_update_defaults() {
+  # Enable the automatic update check
+  defaults write com.apple.SoftwareUpdate AutomaticCheckEnabled -bool true
+
+  # Download newly available updates in background
+  defaults write com.apple.SoftwareUpdate AutomaticDownload -int 1
+
+  # Install System data files & security updates
+  defaults write com.apple.SoftwareUpdate CriticalUpdateInstall -int 1
+}
+
+function set_menubar_defaults() {
   defaults write com.apple.systemuiserver menuExtras -array  \
     "/System/Library/CoreServices/Menu Extras/Bluetooth.menu" \
     "/System/Library/CoreServices/Menu Extras/Clock.menu"  \
@@ -133,7 +155,7 @@ set_menubar_defaults() {
 
 function enable_night_shift() {
   CORE_BRIGHTNESS="/var/root/Library/Preferences/com.apple.CoreBrightness.plist"
-  
+
   ENABLE='{
     CBBlueReductionStatus =     {
       AutoBlueReductionEnabled = 1;
@@ -150,7 +172,7 @@ function enable_night_shift() {
       Version = 1;
     };
   }'
-  
+
   defaults write $CORE_BRIGHTNESS "CBUser-0" "$ENABLE"
   defaults write $CORE_BRIGHTNESS "CBUser-$(dscl . -read $HOME GeneratedUID | sed 's/GeneratedUID: //')" "$ENABLE"
 }
@@ -159,6 +181,9 @@ function set_finder_defaults() {
   # Avoid creating .DS_Store files on network or USB volumes
   defaults write com.apple.desktopservices DSDontWriteNetworkStores -bool true
   defaults write com.apple.desktopservices DSDontWriteUSBStores -bool true
+
+  # Keep folders on top when sorting by name (restart Finder):
+  defaults write com.apple.Finder _FXSortFoldersFirst -bool true
 
   # Restart Finder to make changes effective now
   killall -9 Finder
@@ -188,7 +213,22 @@ function set_safari_defaults() {
   # killall -9 Safari
 }
 
-configure_dock() {
+function enable_firewall() {
+  # Enable the firewall
+  sudo /usr/libexec/ApplicationFirewall/socketfilterfw --setglobalstate on
+
+  # Enable logging on the firewall
+  sudo /usr/libexec/ApplicationFirewall/socketfilterfw --setloggingmode on
+
+  # Enable stealth mode
+  # (computer does not respond to PING or TCP connections on closed ports)
+  sudo /usr/libexec/ApplicationFirewall/socketfilterfw --setstealthmode on
+
+  # Restart the firewall (this should remain last)
+  sudo pkill -HUP socketfilterfw
+}
+
+function configure_dock() {
   if ! hash dockutil 2>/dev/null; then
     error "Dockutil is not installed, but should have been already present!"
     exit 1
@@ -200,14 +240,21 @@ configure_dock() {
   dockutil --no-restart --add "/Applications/Notes.app"
   dockutil --no-restart --add "/Applications/Alacritty.app"
 
-  # Don’t show recent applications in Dock
+  # Don't show recent applications in Dock
   defaults write com.apple.dock show-recents -bool false
 
   # Set the icon size of Dock items to 36 pixels
   defaults write com.apple.dock tilesize -int 36
 
-  # Don’t show Dashboard as a Space
+  # Don't show Dashboard as a Space
   defaults write com.apple.dock dashboard-in-overlay -bool true
+
+  # Don't automatically rearrange Spaces based on most recent use:
+  defaults write com.apple.dock mru-spaces -bool false
+
+  # Auto-hide dock
+  defaults write com.apple.dock autohide -bool true
+  defaults write com.apple.dock autohide-delay -float 0
 
   # Restart Dock to make changes effective now
   killall -9 Dock
@@ -257,8 +304,6 @@ function setup_neovim {
   else
     info "vim-plug for neovim is already installed"
   fi
-
-  success "Neovim setup complete!"
 }
 
 function symlink_dotfile {
