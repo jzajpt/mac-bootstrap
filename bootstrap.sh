@@ -9,6 +9,8 @@ main() {
   install_from_brewfile
   make_fish_default_shell
   set_macos_defaults
+  update_hosts_file
+  setup_dnscrypt_proxy
   configure_dock
   install_rustup
   install_dotfiles
@@ -213,16 +215,39 @@ function set_safari_defaults() {
   # killall -9 Safari
 }
 
+function update_hosts_file() {
+  # Update hosts file to block known malware, adware etc.
+  # TODO: this keeps expanding hosts file on each run
+  curl https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts | sudo tee -a /etc/hosts
+  sudo dscacheutil -flushcache
+  sudo killall -HUP mDNSResponder
+  success "Hosts file updated with "
+}
+
+function setup_dnscrypt_proxy() {
+  # dnscrypt-proxy runs on 53 by defaults, so it needs to be run under root
+  sudo brew services restart dnscrypt-proxy
+  sudo networksetup -setdnsservers "Wi-Fi" 127.0.0.1
+  success "Dnscrypt-proxy configured & running!"
+}
+
 function enable_firewall() {
+  local fw="sudo /usr/libexec/ApplicationFirewall/socketfilterfw"
+
   # Enable the firewall
-  sudo /usr/libexec/ApplicationFirewall/socketfilterfw --setglobalstate on
+  $fw --setglobalstate on
 
   # Enable logging on the firewall
-  sudo /usr/libexec/ApplicationFirewall/socketfilterfw --setloggingmode on
+  $fw --setloggingmode on
 
   # Enable stealth mode
   # (computer does not respond to PING or TCP connections on closed ports)
-  sudo /usr/libexec/ApplicationFirewall/socketfilterfw --setstealthmode on
+  $fw --setstealthmode on
+
+  # # Prevent built-in software as well as code-signed, downloaded software from
+  # being whitelisted automatically
+  $fw --setallowsigned off
+  $fw --setallowsignedapp off
 
   # Restart the firewall (this should remain last)
   sudo pkill -HUP socketfilterfw

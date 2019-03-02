@@ -1,4 +1,5 @@
 
+brew 'dnscrypt-proxy'
 brew 'git'
 brew 'fish'
 brew 'tmux'
