@@ -65,6 +65,11 @@ function make_fish_default_shell() {
     success "Default shell changed to fish!"
   fi
 
+  symlink_dotfile "fish_aliases"
+  symlink_dotfile "fish_variables"
+  symlink_dotfile "config.fish" "$HOME/.config/fish/config.fish"
+
+
   # Do not install OMF yet
   # omf_directory=~/.local/share/omf
   # if [ ! -d "$omf_directory" ]; then
@@ -89,6 +94,9 @@ function set_global_defaults() {
   # settings we
   osascript -e 'tell application "System Preferences" to quit'
 
+  # Show the ~/Library folder.
+  chflags nohidden ~/Library
+
   # Disable Guest user
   sudo defaults write /Library/Preferences/com.apple.loginwindow GuestEnabled -bool FALSE
 
@@ -112,6 +120,12 @@ function set_global_defaults() {
   # Require password immediately after sleep or screen saver begins"
   defaults write com.apple.screensaver askForPassword -int 1
   defaults write com.apple.screensaver askForPasswordDelay -int 0
+
+  # Disable crash reporter
+  sudo defaults write com.apple.CrashReporter DialogType none
+  launchctl unload -w /System/Library/LaunchAgents/com.apple.ReportCrash.plist
+  sudo launchctl unload -w /System/Library/LaunchDaemons/com.apple.ReportCrash.Root.plist
+  sudo launchctl unload -w com.apple.ReportPanic
 }
 
 function set_software_update_defaults() {
@@ -165,6 +179,12 @@ function set_finder_defaults() {
   defaults write com.apple.desktopservices DSDontWriteNetworkStores -bool true
   defaults write com.apple.desktopservices DSDontWriteUSBStores -bool true
 
+  # Show all files (including dotfiles)
+  defaults write com.apple.finder AppleShowAllFiles -bool true
+
+  # Open new window to User Home
+  defaults write com.apple.finder NewWindowTarget -string PfHm
+
   # Keep folders on top when sorting by name (restart Finder):
   defaults write com.apple.Finder _FXSortFoldersFirst -bool true
 
@@ -181,14 +201,25 @@ function set_safari_defaults() {
   # Safari opens with all windows from last session
   defaults write -app Safari AlwaysRestoreSessionAtLaunch -bool true
 
-  # Enable Safari debug menu
+  # Enable "Do Not Track"
   defaults write -app Safari SendDoNotTrackHTTPHeader -bool true
+
+  # Show full URLs
+  defaults write -app Safari ShowFullURLInSmartSearchField -bool true
+
+
+  # New tabs instead of new windows
+  defaults write -app Safari TargetedClicksCreateTabs -bool true
+
+  # Enable the Develop menu and the Web Inspector in Safari
+  defaults write -app Safari IncludeDevelopMenu -bool true
+  defaults write -app Safari WebKitDeveloperExtrasEnabledPreferenceKey -bool true
 
   # Disable AutoFill
   defaults write -app Safari AutoFillPasswords -bool false
 
   # Restart Safari to make changes effective now
-  osascript -e 'tell application "Safari" to quit'
+  # osascript -e 'tell application "Safari" to quit'
 }
 
 function update_hosts_file() {
