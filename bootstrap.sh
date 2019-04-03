@@ -310,6 +310,9 @@ function install_rustup() {
   # Add cargo's bin to $PATH using fish's universal variable
   fish -c 'set -U fish_user_paths $HOME/.cargo/bin $fish_user_paths'
 
+  # Install Rust Language Server
+  rustup component add rls rust-analysis rust-src
+
   success "Rustup installed!"
 }
 

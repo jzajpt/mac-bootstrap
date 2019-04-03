@@ -1,5 +1,12 @@
 call plug#begin('~/.local/share/nvim/plugged')
 
+	Plug 'editorconfig/editorconfig-vim'
+
+        Plug 'autozimu/LanguageClient-neovim', {
+            \ 'branch': 'next',
+            \ 'do': 'bash install.sh',
+            \ }
+
 	" Code completion engine
 	Plug 'Shougo/deoplete.nvim', { 'do': ':UpdateRemotePlugins' }
 
@@ -10,6 +17,10 @@ call plug#begin('~/.local/share/nvim/plugged')
 	" Fuzzy-file search
 	Plug 'junegunn/fzf', { 'dir': '~/.fzf', 'do': './install --all' }
 	Plug 'junegunn/fzf.vim'
+
+	" Snippets
+	Plug 'Shougo/neosnippet.vim'
+	Plug 'Shougo/neosnippet-snippets'
 
 	" Neomake
 	Plug 'neomake/neomake'
@@ -77,7 +88,7 @@ set mouse=a
 
 " Python integration
 let g:python2_host_prog = '/usr/local/bin/python'
-let g:python3_host_prog = '/Users/jz/.pyenv/shims/python'
+let g:python3_host_prog = '/usr/local/bin/python3'
 
 " Python
 autocmd FileType python nnoremap <leader>y :0,$!yapf<Cr>
@@ -91,6 +102,26 @@ let test#python#runner = 'pytest'
 let test#python#pytest#executable = 'pipenv run pytest'
 
 
+" LSP
+let g:LanguageClient_serverCommands = {
+    \ 'rust': ['~/.cargo/bin/rustup', 'run', 'stable', 'rls'],
+    \ 'python': ['/usr/local/bin/pyls'],
+    \ }
+
+" Plugin key-mappings.
+" Note: It must be "imap" and "smap".  It uses <Plug> mappings.
+imap <C-k>     <Plug>(neosnippet_expand_or_jump)
+smap <C-k>     <Plug>(neosnippet_expand_or_jump)
+xmap <C-k>     <Plug>(neosnippet_expand_target)
+
+" SuperTab like snippets behavior.
+" Note: It must be "imap" and "smap".  It uses <Plug> mappings.
+"imap <expr><TAB>
+" \ pumvisible() ? "\<C-n>" :
+" \ neosnippet#expandable_or_jumpable() ?
+" \    "\<Plug>(neosnippet_expand_or_jump)" : "\<TAB>"
+smap <expr><TAB> neosnippet#expandable_or_jumpable() ?
+\ "\<Plug>(neosnippet_expand_or_jump)" : "\<TAB>"
 
 
 "Rust Racer related
