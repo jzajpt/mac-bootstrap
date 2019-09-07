@@ -54,8 +54,8 @@ call plug#begin('~/.local/share/nvim/plugged')
 	" Airline
 	Plug 'vim-airline/vim-airline'
 	Plug 'ryanoasis/vim-devicons'
-
-
+	Plug 'hashivim/vim-packer'
+	Plug 'hashivim/vim-terraform'
 
 	" Color schemes
 	Plug 'nightsense/seagrey'
@@ -85,6 +85,8 @@ set mouse=a
 " normal mode (after 1s; no delay when writing).
 " call neomake#configure#automake('nrwi', 500)
 
+
+autocmd FileType yaml setlocal ts=2 sts=2 sw=2 expandtab
 
 " Python integration
 let g:python2_host_prog = '/usr/local/bin/python'

@@ -1,10 +1,13 @@
-alias v="nvim"
-alias vim="nvim"
+alias cb="cargo build"
+alias cr="cargo run"
+
+alias g="git"
 
 alias t="tmux"
 alias ta="tmux attach"
 
-alias g="git"
+alias tf="terraform"
 
-alias cb="cargo build"
-alias cr="cargo run"
+alias v="nvim"
+alias vim="nvim"
+
