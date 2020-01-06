@@ -35,6 +35,11 @@ call plug#begin('~/.local/share/nvim/plugged')
 	" The silver searcher
 	Plug 'rking/ag.vim'
 
+	" Ruby
+	Plug 'tpope/vim-bundler'
+	Plug 'tpope/vim-rails'
+	Plug 'slim-template/vim-slim'
+
 	"Python stuff
 	Plug 'zchee/deoplete-jedi'
 	Plug 'nvie/vim-flake8'
@@ -43,6 +48,13 @@ call plug#begin('~/.local/share/nvim/plugged')
 	Plug 'rust-lang/rust.vim'
 	Plug 'racer-rust/vim-racer'
 	Plug 'majutsushi/tagbar'
+
+	" Typescript
+	Plug 'HerringtonDarkholme/yats.vim'
+	Plug 'mhartington/nvim-typescript', {'do': './install.sh'}
+
+	" TOML
+	Plug 'cespare/vim-toml'
 
 	" Pope's utilities
 	Plug 'tpope/vim-surround'
@@ -64,6 +76,8 @@ call plug#begin('~/.local/share/nvim/plugged')
 	Plug 'hzchirs/vim-material'
 	Plug 'crusoexia/vim-monokai'
 
+	" Insert or delete brackets, parens, quotes in pair.
+	Plug 'jiangmiao/auto-pairs'
 
 call plug#end()
 
@@ -84,6 +98,10 @@ set mouse=a
 " Full config: when writing or reading a buffer, and on changes in insert and
 " normal mode (after 1s; no delay when writing).
 " call neomake#configure#automake('nrwi', 500)
+
+autocmd FileType typescript set tabstop=2 shiftwidth=2 expandtab
+autocmd BufEnter *.tsx set filetype=typescript
+
 
 
 autocmd FileType yaml setlocal ts=2 sts=2 sw=2 expandtab
@@ -165,6 +183,18 @@ let mapleader = ","
 
 " Fuzzy file search
 nnoremap <C-p> :FZF<CR>
+
+" Neomake setup - run Neomake automatically
+" When writing a buffer (no delay).
+call neomake#configure#automake('w')
+" When writing a buffer (no delay), and on normal mode changes (after 750ms).
+call neomake#configure#automake('nw', 750)
+" When reading a buffer (after 1s), and when writing (no delay).
+call neomake#configure#automake('rw', 1000)
+" Full config: when writing or reading a buffer, and on changes in insert and
+" normal mode (after 1s; no delay when writing).
+call neomake#configure#automake('nrwi', 500)
+
 
 
 
