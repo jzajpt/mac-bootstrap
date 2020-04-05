@@ -25,6 +25,9 @@ call plug#begin('~/.local/share/nvim/plugged')
 	" Neomake
 	Plug 'neomake/neomake'
 
+	" The silver searcher
+	Plug 'rking/ag.vim'
+
 	" Go stuff
 	Plug 'fatih/vim-go'
 	Plug 'nsf/gocode'
@@ -32,13 +35,11 @@ call plug#begin('~/.local/share/nvim/plugged')
 
 	Plug 'janko-m/vim-test'
 
-	" The silver searcher
-	Plug 'rking/ag.vim'
-
 	" Ruby
 	Plug 'tpope/vim-bundler'
 	Plug 'tpope/vim-rails'
 	Plug 'slim-template/vim-slim'
+	Plug 'tpope/vim-haml'
 
 	"Python stuff
 	Plug 'zchee/deoplete-jedi'
@@ -52,6 +53,8 @@ call plug#begin('~/.local/share/nvim/plugged')
 	" Typescript
 	Plug 'HerringtonDarkholme/yats.vim'
 	Plug 'mhartington/nvim-typescript', {'do': './install.sh'}
+
+	Plug 'mattn/emmet-vim'
 
 	" TOML
 	Plug 'cespare/vim-toml'
@@ -94,6 +97,20 @@ set colorcolumn=+1
 set textwidth=80
 set mouse=a
 
+" open new split panes to right and below
+set splitright
+set splitbelow
+" turn terminal to normal mode with escape
+tnoremap <Esc> <C-\><C-n>
+" start terminal in insert mode
+au BufEnter * if &buftype == 'terminal' | :startinsert | endif
+" open terminal on ctrl+n
+function! OpenTerminal()
+  split term://fish
+  resize 10
+endfunction
+nnoremap <C-D-t> :call OpenTerminal()<CR>
+
 " NEOMAKE
 " Full config: when writing or reading a buffer, and on changes in insert and
 " normal mode (after 1s; no delay when writing).
@@ -102,6 +119,7 @@ set mouse=a
 autocmd FileType typescript set tabstop=2 shiftwidth=2 expandtab
 autocmd BufEnter *.tsx set filetype=typescript
 
+autocmd FileType javascript set tabstop=2 shiftwidth=2 expandtab
 
 
 autocmd FileType yaml setlocal ts=2 sts=2 sw=2 expandtab
@@ -126,6 +144,7 @@ let test#python#pytest#executable = 'pipenv run pytest'
 let g:LanguageClient_serverCommands = {
     \ 'rust': ['~/.cargo/bin/rustup', 'run', 'stable', 'rls'],
     \ 'python': ['/usr/local/bin/pyls'],
+    \ 'ruby': ['~/.rbenv/shims/solargraph', 'stdio'],
     \ }
 
 " Plugin key-mappings.
@@ -149,7 +168,7 @@ set hidden
 let g:racer_cmd = "/usr/local/bin/racer"
 let g:rust_clip_command = 'pbcopy'
 let g:rustfmt_autosave = 1
-nnoremap <C-b> :Cargo build<CR>
+" nnoremap <C-b> :Cargo build<CR>
 
 
 " Go config
@@ -181,8 +200,18 @@ map <C-n> :NERDTreeToggle<CR>
 
 let mapleader = ","
 
+" Open new empty tab
+nmap <leader>t :tabe<cr>
+
 " Fuzzy file search
-nnoremap <C-p> :FZF<CR>
+nnoremap <C-p> :Files<CR>
+let g:fzf_buffers_jump = 1
+let g:fzf_action = {
+  \ 'ctrl-t': 'tab drop',
+  \ 'ctrl-x': 'split',
+  \ 'ctrl-v': 'vsplit' }
+" Close FZF window when hitting escape
+tnoremap <expr> <Esc> (&filetype == "fzf") ? "<Esc>" : "<c-\><c-n>"
 
 " Neomake setup - run Neomake automatically
 " When writing a buffer (no delay).
